@@ -11,50 +11,30 @@ ws2 = wb2.active
 #-------------------------------------------------------------
 #FUNCTIONS
 #-------------------------------------------------------------
-def getColNum(str):
-    if str == "Prefix":
-        return 1
-    elif str == "Product Code":
-        return 2
-    elif str == "Product Description":
-        return 3
-    elif str == "UPC":
-        return 4
-    elif str == "List Price":
-        return 5
-    elif str == "Net Cost":
-        return 6
-    elif str == "Product Line":
-        return 7
-    elif str == "Price Group":
-        return 8
-    elif str == "Placeholder 1":
-        return 9
-    elif str == "Placeholder 2":
-        return 10
-    elif str == "Placeholder 3":
-        return 11
-    elif str == "Last Updated":
-        return 12
-    else:
-        return 5
-
+def createRow(row):
+    row_cells = []
+    newPCode = f"{row[0].value}-{row[1].value}"
+    row_cells.append(newPCode)
+    for cell in range(2, len(row)):
+        row_cells.append(row[cell].value)
+    now = datetime.now()
+    row_cells.append(now)
+    return row_cells
+    
 
 def ingestToList(ws):
     sheet_cells = []
-    for rows in ws.iter_rows():
-        row_cells = []
-        for cell in rows:
-            row_cells.append(cell.value)
-        sheet_cells.append(row_cells)
+    for row in ws.iter_rows(min_row=2):
+        newRow = createRow(row)
+        sheet_cells.append(newRow)
     return sheet_cells
 
 
 def ingestToDict(ws):
     sheet_cells = {}
-    rowNum = 1
-    for row in ws.iter_rows():
-        pCode = row[1].value
+    rowNum = 2
+    for row in ws.iter_rows(min_row=2):
+        pCode = row[0].value
         sheet_cells[pCode] = rowNum
         rowNum += 1
     return sheet_cells
@@ -67,27 +47,21 @@ def printList(pList):
         print("\n")
 
 
-def merge(master, template, masterCol):
+def mergeSheets(master, template):
     for row in template:
-        if row[1] in master:
-            masterIdx = master[row[1]]
-            ws1.cell(row=masterIdx, column=masterCol, value=row[4])
+        if row[0] in master:
+            masterIdx = master[row[0]]
+            ws1.cell(row=masterIdx, column=4, value=row[3])
             now = datetime.now()
-            ws1.cell(row=masterIdx, column=12, value=now)
+            ws1.cell(row=masterIdx, column=11, value=now)
         else:
-            newRow = []
-            now = datetime.now()
-            for v in row:
-                newRow.append(v)
-            newRow.append(now)
-            ws1.append(newRow)
+            ws1.append(row)
 #-------------------------------------------------------------
 #IMPLEMENTATION
 #-------------------------------------------------------------
 templateList = ingestToList(ws2)
 masterDict = ingestToDict(ws1)
-masterCol = getColNum("List Price")
-merge(masterDict, templateList, masterCol)
+mergeSheets(masterDict, templateList)
 #-------------------------------------------------------------
 #CLOSING
 #-------------------------------------------------------------
